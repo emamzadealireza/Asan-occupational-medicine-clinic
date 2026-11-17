@@ -66,7 +66,8 @@ def api_base() -> str:
 
 LOGO_BASE64_PATHS = [
     os.path.join(BASE_DIR, "logo-final-with-text-base64.txt"),
-    r"D:\کلینیک خصوصی طب کار\لوگو کلینیک\logo-final-with-text-base64.txt",
+    r"D:\طب کار آسان\فرم ها و آئین نامه ها\لوگو کلینیک\logo-final-with-text-base64.txt",
+    os.path.join(BASE_DIR, "..", "clinic logo", "logo-final-with-text-base64.txt"),
 ]
 
 # ----------------------------------------------------------------------
