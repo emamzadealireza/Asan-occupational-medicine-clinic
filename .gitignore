@@ -6,3 +6,7 @@ Asan_Invoice_maker_bot/profiles.json
 # runtime junk
 Asan_Invoice_maker_bot/__pycache__/
 Asan_Invoice_maker_bot/bot.log
+Asan_Invoice_maker_bot/bot_err.log
+Asan_Invoice_maker_bot/bot.lock
+# generated invoices (contain customer data)
+Asan_Invoice_maker_bot/فاکتورهای-تولیدشده/
