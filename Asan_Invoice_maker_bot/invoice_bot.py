@@ -567,6 +567,21 @@ def build_html(inv: dict) -> str:
     total = sum(q * u for _, _, q, u in inv["items"])
     payable = total + inv["vat"] - inv["discount"]
 
+    # ردیف توضیحات مالی — فقط وقتی نمایش داده می‌شود که مقدار غیر صفر باشد
+    # (اگر تخفیف/مالیات در پیام نیامده یا صفر است، کلمه نوشته نمی‌شود)
+    disc_html = (
+        f'<span style="font-weight:600">تخفیف : </span>{fmt_amount(inv["discount"])}'
+        '<span style="display:inline-block;width:14mm"></span>'
+    ) if inv["discount"] else ""
+    vat_html = (
+        f'<span style="font-weight:600">مالیات بر ارزش افزوده : </span>{fmt_amount(inv["vat"])}'
+        '<span style="display:inline-block;width:14mm"></span>'
+    ) if inv["vat"] else ""
+    meta_row_html = (
+        f'<tr><td style="width:30mm;font-weight:700">توضیحات :</td><td>{disc_html}{vat_html}</td></tr>'
+        if (disc_html or vat_html) else ""
+    )
+
     item_rows = "\n".join(
         f"<tr>"
         f'<td class="name-td">{esc(name)}</td>'
@@ -694,15 +709,7 @@ def build_html(inv: dict) -> str:
   </table>
 
   <table>
-    <tr>
-      <td style="width:30mm;font-weight:700">توضیحات :</td>
-      <td>
-        <span style="font-weight:600">تخفیف : </span>{fmt_amount(inv['discount'])}
-        <span style="display:inline-block;width:14mm"></span>
-        <span style="font-weight:600">مالیات بر ارزش افزوده : </span>{fmt_amount(inv['vat'])}
-        <span style="display:inline-block;width:14mm"></span>
-      </td>
-    </tr>
+    {meta_row_html}
     <tr class="pay-box">
       <td colspan="2" style="text-align:center">مبلغ قابل پرداخت : {fmt_amount(payable)} تومان</td>
     </tr>
