@@ -81,9 +81,10 @@ SELLER_DEFAULT = {
     "phone": "۰۹۱۲۴۴۸۵۶۲۶",
     "address": "تهران - شهرک صنعتی شمس آباد - بعد از بهار دستپین - نبش بهار بهرستان - نبش چهارم دستکن - بخش حسن آباد - شهرستان ری",
     "card": "",
+    "sheba": "",
 }
 
-NEW_PARTY = {"name": "", "id": "", "economic": "", "postal": "", "phone": "", "address": "", "card": ""}
+NEW_PARTY = {"name": "", "id": "", "economic": "", "postal": "", "phone": "", "address": "", "card": "", "sheba": ""}
 
 # ----------------------------------------------------------------------
 # ابزارهای کمکی
@@ -309,6 +310,8 @@ PARTY_FIELDS = {
     "شماره کارت بانکی": "card",
     "کارت بانکی": "card",
     "کارت": "card",
+    "شماره شبا": "sheba",
+    "شبا": "sheba",
 }
 
 ITEM_KEYS = {"کالاجانبی", "کالا", "محصول", "خدمت", "خدمات", "مورد"}
@@ -479,6 +482,10 @@ def parse_invoice_text(raw: str) -> dict:
             inv["seller"]["card"] = value
             inv["seller_overrides"]["card"] = value
             continue
+        if k_ns.endswith("شبا"):
+            inv["seller"]["sheba"] = value
+            inv["seller_overrides"]["sheba"] = value
+            continue
 
         # کلید بدون پیشوند فروشنده/خریدار (مثل «کد پستی») → خریدار
         # کلیدهای طرفین؛ هر دو ترتیب پذیرفته می‌شود:
@@ -617,13 +624,20 @@ def build_html(inv: dict) -> str:
     num_html = f'<div class="num">شماره : {esc(inv["number"])}</div>' if inv["number"] else ""
     date_html = f'<div class="num">{date_html}</div>' if date_html else ""
 
-    def party_html(p: dict, econ_label: str = "شماره اقتصادی", card: bool = False) -> str:
+    def party_html(p: dict, econ_label: str = "شماره اقتصادی", bank: bool = False) -> str:
         id_line = f"<span><span class='klabel'>شناسه / شماره ملی : </span>{esc(p['id'] or '-')}</span>"
         tel_line = f"<span><span class='klabel'>شماره تماس : </span>{esc(p['phone'] or '-')}</span>"
-        card_html = (
-            f"<span style='display:inline-block;width:10mm'></span>"
-            f"<span><span class='klabel'>شماره کارت : </span>{esc(p['card'])}</span>"
-        ) if card and p.get("card") else ""
+        bank_html = ""
+        if bank:
+            if p.get("card"):
+                bank_html += (
+                    f"<span style='display:inline-block;width:10mm'></span>"
+                    f"<span><span class='klabel'>شماره کارت : </span>{esc(p['card'])}</span>"
+                )
+            if p.get("sheba"):
+                bank_html += "<br>" + (
+                    f"<span><span class='klabel'>شماره شبا : </span>{esc(p['sheba'])}</span>"
+                )
         return (
             f"<span class='klabel'>{esc(p['name'])}</span><br>"
             f"{id_line}"
@@ -632,7 +646,7 @@ def build_html(inv: dict) -> str:
             f"<span style='display:inline-block;width:10mm'></span>"
             f"<span><span class='klabel'>کد پستی : </span>{esc(p['postal'] or '-')}</span><br>"
             f"{tel_line}"
-            f"{card_html}"
+            f"{bank_html}"
         )
 
     s, b = inv["seller"], inv["buyer"]
@@ -690,7 +704,7 @@ def build_html(inv: dict) -> str:
     <tr class="section-title"><td>مشخصات فروشنده</td></tr>
   </table>
   <table class="kv">
-    <tr><td class="k">نام : </td><td class="v">{party_html(s, 'شماره پروانه', card=True)}</td></tr>
+    <tr><td class="k">نام : </td><td class="v">{party_html(s, 'شماره پروانه', bank=True)}</td></tr>
     <tr><td class="k">نشانی : </td><td class="v" style="text-align:justify">{esc(s['address'] or '-')}</td></tr>
   </table>
 
@@ -838,6 +852,7 @@ HELP_TEXT = """🧾 ساخت پیش‌فاکتور و فاکتور فروش
   فروشنده نشانی: ...
   فروشنده شماره پروانه: … (شماره پروانه مطب)
   فروشنده شماره کارت: … (شماره کارت بانکی فروشنده)
+  فروشنده شماره شبا: … (شماره شبا فروشنده)
   فروشنده شماره تماس: ۰۹…
   فقط موارد لازم را بفرستید؛ ذخیره می‌شود و دفعات بعد تکرار لازم نیست.
 • بعد از ارسال، PDF در همین چت فرستاده می‌شود."""
