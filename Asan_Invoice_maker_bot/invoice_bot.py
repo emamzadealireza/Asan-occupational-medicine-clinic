@@ -82,9 +82,10 @@ SELLER_DEFAULT = {
     "address": "تهران - شهرک صنعتی شمس آباد - بعد از بهار دستپین - نبش بهار بهرستان - نبش چهارم دستکن - بخش حسن آباد - شهرستان ری",
     "card": "",
     "sheba": "",
+    "holder": "",
 }
 
-NEW_PARTY = {"name": "", "id": "", "economic": "", "postal": "", "phone": "", "address": "", "card": "", "sheba": ""}
+NEW_PARTY = {"name": "", "id": "", "economic": "", "postal": "", "phone": "", "address": "", "card": "", "sheba": "", "holder": ""}
 
 # ----------------------------------------------------------------------
 # ابزارهای کمکی
@@ -312,6 +313,9 @@ PARTY_FIELDS = {
     "کارت": "card",
     "شماره شبا": "sheba",
     "شبا": "sheba",
+    "نام صاحب حساب": "holder",
+    "صاحب حساب": "holder",
+    "صاحب کارت": "holder",
 }
 
 ITEM_KEYS = {"کالاجانبی", "کالا", "محصول", "خدمت", "خدمات", "مورد"}
@@ -478,6 +482,10 @@ def parse_invoice_text(raw: str) -> dict:
             continue
 
         # شماره کارت — بدون پسوند (فروشنده/خریدار) متعلق به فروشنده است
+        if k_ns.endswith("صاحبحساب") or k_ns.endswith("صاحبکارت"):
+            inv["seller"]["holder"] = value
+            inv["seller_overrides"]["holder"] = value
+            continue
         if k_ns.endswith("کارت") or k_ns.endswith("کارتبانکی"):
             inv["seller"]["card"] = value
             inv["seller_overrides"]["card"] = value
@@ -637,6 +645,10 @@ def build_html(inv: dict) -> str:
             if p.get("sheba"):
                 bank_html += "<br>" + (
                     f"<span><span class='klabel'>شماره شبا : </span>{esc(p['sheba'])}</span>"
+                )
+            if p.get("holder"):
+                bank_html += "<br>" + (
+                    f"<span><span class='klabel'>صاحب حساب : </span>{esc(p['holder'])}</span>"
                 )
         return (
             f"<span class='klabel'>{esc(p['name'])}</span><br>"
@@ -853,6 +865,7 @@ HELP_TEXT = """🧾 ساخت پیش‌فاکتور و فاکتور فروش
   فروشنده شماره پروانه: … (شماره پروانه مطب)
   فروشنده شماره کارت: … (شماره کارت بانکی فروشنده)
   فروشنده شماره شبا: … (شماره شبا فروشنده)
+  فروشنده نام صاحب حساب: … (نام صاحب حساب بانکی)
   فروشنده شماره تماس: ۰۹…
   فقط موارد لازم را بفرستید؛ ذخیره می‌شود و دفعات بعد تکرار لازم نیست.
 • بعد از ارسال، PDF در همین چت فرستاده می‌شود."""
