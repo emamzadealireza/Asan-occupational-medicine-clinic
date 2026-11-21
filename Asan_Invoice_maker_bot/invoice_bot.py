@@ -522,7 +522,8 @@ def parse_invoice_text(raw: str) -> dict:
             for fkey, fname in PARTY_FIELDS.items():
                 if rest_ns == fk_norm(fkey):
                     inv[party][fname] = value
-                    if party == "seller":
+                    # مقدار خالی فیلد فروشنده را ذخیره نکن تا مقدار قبلی پاک نشود
+                    if party == "seller" and value:
                         inv["seller_overrides"][fname] = value
                     matched = True
                     break
@@ -534,7 +535,7 @@ def parse_invoice_text(raw: str) -> dict:
                     for fkey, fname in PARTY_FIELDS.items():
                         if frag == fk_norm(fkey):
                             inv[party][fname] = value
-                            if party == "seller":
+                            if party == "seller" and value:
                                 inv["seller_overrides"][fname] = value
                             matched = True
                             break
@@ -544,13 +545,27 @@ def parse_invoice_text(raw: str) -> dict:
                 inv["notes"].append(line)
             continue
 
-        if k_ns in ("توضیح", "توضیحات", "توضیح", "توضیحات", "شرح", "متن اضافه", "یادداشت", "توضیحات اضافه"):
+        if k_ns in ("توضیح", "توضیحات", "توضیج", "شرح", "متن اضافه", "یادداشت", "توضیحات اضافه"):
             if value:
                 inv["notes"].append(value)
             # سطرهای بعدی بدون کلید هم ادامه همین توضیح هستند
             continue
 
         inv["notes"].append(line)
+
+    # ادغام ردیف شماره‌دارِ بدون نام با ردیف قبلی که فقط نام دارد
+    # (خطای شماره‌گذاری رایج: «کالا 8» بعد «شرح 9 / تعداد 9 / قیمت واحد 9»)
+    for idx in sorted(inv["slots"]):
+        s = inv["slots"][idx]
+        if s.get("name"):
+            continue
+        if not (s.get("desc") or s.get("qty") is not None or s.get("unit")):
+            continue
+        prev = inv["slots"].get(idx - 1)
+        if prev and prev.get("name") and not prev.get("desc") \
+                and prev.get("qty") in (None, 1.0) and not prev.get("unit"):
+            s["name"] = prev["name"]
+            del inv["slots"][idx - 1]
 
     # تبدیل ردیف‌ها به آیتم‌های نهایی به ترتیب شماره
     final_items = []
@@ -567,7 +582,7 @@ def parse_invoice_text(raw: str) -> dict:
             if s.get("unit"):
                 bits.append("قیمت واحد: " + fmt_amount(s["unit"]))
             if bits:
-                inv["notes"].append("ردیف " + to_persian_digits(str(idx)) + ": " + " | ".join(bits))
+                inv["notes"].append("ردیف " + fa_digits(str(idx)) + ": " + " | ".join(bits))
             continue
         desc = s.get("desc") or ""
         qty = s.get("qty") if s.get("qty") is not None else 1.0
